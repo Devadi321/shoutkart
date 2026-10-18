@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShoutKart — Book shoutouts from India's meme pages</title>
+<meta name="description" content="ShoutKart connects brands with India's meme pages. Book a story or feed-post shoutout in minutes.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://vxszwegrpzrzbbwqyovw.supabase.co">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background: #131022; color: #F4F1FF; line-height: 1.5; }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 16px 70px; }
+  a { color: #C6FF4A; }
+  /* nav */
+  nav { display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 0; }
+  .logo { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; text-decoration: none; color: #F4F1FF; }
+  .logo b { color: #C6FF4A; }
+  .navlinks a { color: #B9B3D9; text-decoration: none; font-size: 15px; margin-left: 18px; font-weight: 600; }
+  .navlinks a.cta { background: #C6FF4A; color: #131022; padding: 9px 16px; border-radius: 99px; }
+  /* hero */
+  .hero { text-align: center; padding: 44px 0 10px; }
+  .hero h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.05; letter-spacing: -1px; }
+  .hero h1 .hl { color: #C6FF4A; }
+  .hero p { color: #B9B3D9; font-size: 18px; margin-top: 12px; max-width: 620px; margin-left: auto; margin-right: auto; }
+  .hero .btnrow { margin-top: 22px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn { display: inline-block; padding: 14px 26px; border-radius: 12px; border: none;
+         background: #C6FF4A; color: #131022; font-size: 17px; font-weight: 800; cursor: pointer; text-decoration: none; }
+  .btn:active { transform: scale(.98); }
+  .btn.ghost { background: transparent; color: #C6FF4A; border: 2px solid #C6FF4A; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn.block { display: block; width: 100%; }
+  /* how */
+  .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 34px; }
+  .how .step { background: #1D1930; border: 1px solid #2C2650; border-radius: 16px; padding: 18px 14px; text-align: center; }
+  .how .step b { display: block; font-size: 30px; margin-bottom: 6px; }
+  .how .step h3 { font-size: 16px; margin-bottom: 4px; }
+  .how .step p { font-size: 13.5px; color: #B9B3D9; }
+  /* toolbar */
+  .toolbar { display: flex; gap: 10px; margin: 34px 0 16px; flex-wrap: wrap; }
+  .toolbar input, .toolbar select { background: #1D1930; border: 1.5px solid #2C2650; color: #F4F1FF;
+      border-radius: 10px; padding: 11px 13px; font-size: 15px; }
+  .toolbar input { flex: 1; min-width: 180px; }
+  .toolbar input:focus, .toolbar select:focus { outline: none; border-color: #C6FF4A; }
+  .count { color: #B9B3D9; font-size: 14px; margin-bottom: 12px; }
+  /* grid + cards */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .card { background: #1D1930; border: 1px solid #2C2650; border-radius: 18px; padding: 20px;
+          display: flex; flex-direction: column; gap: 10px; transition: border-color .15s; }
+  .card:hover { border-color: #C6FF4A; }
+  .card .top { display: flex; gap: 12px; align-items: center; }
+  .avatar { width: 56px; height: 56px; border-radius: 50%; flex: none;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: 800; color: #131022; }
+  .card .who h3 { font-size: 17px; }
+  .card .who .handle { color: #B9B3D9; font-size: 13.5px; }
+  .niche { display: inline-block; font-size: 12px; font-weight: 700; background: #2C2650; color: #C6FF4A;
+           border-radius: 99px; padding: 3px 10px; margin-top: 2px; }
+  .samplebadge { display: inline-block; font-size: 11px; font-weight: 800; background: #3A2E12; color: #FFC94A;
+           border-radius: 99px; padding: 3px 10px; margin-top: 2px; margin-left: 6px; letter-spacing: .5px; }
+  .stats { display: flex; gap: 16px; font-size: 13.5px; color: #B9B3D9; }
+  .stats b { color: #F4F1FF; font-size: 16px; display: block; }
+  .prices { display: flex; gap: 10px; margin-top: 2px; }
+  .price { flex: 1; background: #131022; border: 1px solid #2C2650; border-radius: 12px; padding: 10px; text-align: center; }
+  .price .t { font-size: 12px; color: #B9B3D9; }
+  .price .p { font-size: 19px; font-weight: 800; color: #C6FF4A; }
+  .card .bookbtn { margin-top: auto; }
+  /* detail */
+  .detailhead { display: flex; gap: 18px; align-items: center; margin-top: 26px; flex-wrap: wrap; }
+  .detailhead .avatar { width: 88px; height: 88px; font-size: 38px; }
+  .detailhead h1 { font-size: 30px; }
+  .detailhead .handle { color: #B9B3D9; }
+  .bio { color: #B9B3D9; margin-top: 14px; max-width: 700px; }
+  .statgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 18px; }
+  .statgrid .stat { background: #1D1930; border: 1px solid #2C2650; border-radius: 14px; padding: 14px; text-align: center; }
+  .statgrid .stat b { display: block; font-size: 22px; color: #C6FF4A; }
+  .statgrid .stat span { font-size: 12.5px; color: #B9B3D9; }
+  .planrow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  .plan { background: #1D1930; border: 2px solid #2C2650; border-radius: 18px; padding: 24px; text-align: center; }
+  .plan.hot { border-color: #C6FF4A; }
+  .plan h3 { font-size: 19px; }
+  .plan .p { font-size: 36px; font-weight: 800; color: #C6FF4A; margin: 8px 0; }
+  .plan p { color: #B9B3D9; font-size: 14px; margin-bottom: 16px; }
+  /* forms */
+  .formcard { background: #1D1930; border: 1px solid #2C2650; border-radius: 18px; padding: 26px; margin-top: 22px; max-width: 640px; }
+  .formcard h2 { font-size: 24px; margin-bottom: 6px; }
+  .formcard .sub { color: #B9B3D9; font-size: 14.5px; margin-bottom: 8px; }
+  label { display: block; font-size: 13px; font-weight: 700; margin: 14px 0 5px; color: #D9D4F2; }
+  input, textarea, select { width: 100%; padding: 12px; border: 1.5px solid #2C2650; border-radius: 10px;
+      font-size: 16px; background: #131022; color: #F4F1FF; font-family: inherit; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: #C6FF4A; }
+  textarea { min-height: 90px; resize: vertical; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .err { background: #3A1620; color: #FF8FA3; border-radius: 10px; padding: 10px 12px;
+         font-size: 14px; margin-top: 12px; display: none; }
+  .ok { background: #16281A; color: #9DF0A8; border-radius: 10px; padding: 10px 12px;
+        font-size: 14px; margin-top: 12px; display: none; }
+  .summary { background: #131022; border: 1px solid #2C2650; border-radius: 12px; padding: 16px; margin-top: 16px; }
+  .summary .line { display: flex; justify-content: space-between; font-size: 15px; padding: 4px 0; }
+  .summary .line.total { font-weight: 800; font-size: 18px; border-top: 1px solid #2C2650; margin-top: 8px; padding-top: 10px; }
+  .summary .line.total span:last-child { color: #C6FF4A; }
+  .freenote { font-size: 13px; color: #9DF0A8; }
+  .typepick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+  .typepick .tp { border: 2px solid #2C2650; border-radius: 12px; padding: 14px; text-align: center; cursor: pointer; }
+  .typepick .tp.sel { border-color: #C6FF4A; background: #1a2410; }
+  .typepick .tp b { display: block; font-size: 16px; }
+  .typepick .tp span { color: #C6FF4A; font-weight: 800; font-size: 18px; }
+  .typepick .tp small { color: #B9B3D9; display: block; font-size: 12px; }
+  /* success */
+  .success { text-align: center; padding: 50px 20px; }
+  .success .big { font-size: 64px; }
+  .success h2 { font-size: 28px; margin: 12px 0 8px; }
+  .success p { color: #B9B3D9; max-width: 520px; margin: 0 auto 6px; }
+  .refcode { display: inline-block; background: #131022; border: 1.5px dashed #C6FF4A; color: #C6FF4A;
+             font-family: monospace; font-size: 22px; letter-spacing: 2px; padding: 10px 22px;
+             border-radius: 12px; margin: 14px 0; }
+  footer { text-align: center; color: #6E6890; font-size: 13.5px; margin-top: 50px; }
+  footer a { color: #C6FF4A; text-decoration: none; font-weight: 700; }
+  .center { text-align: center; }
+  .muted { color: #B9B3D9; }
+  .backlink { display: inline-block; margin-top: 20px; color: #B9B3D9; font-size: 14px; text-decoration: none; }
+  .hidden { display: none !important; }
+  .notice { background: #1D1930; border: 1px solid #2C2650; border-left: 4px solid #FFC94A;
+            border-radius: 10px; padding: 12px 14px; font-size: 14px; color: #D9D4F2; margin-top: 18px; }
+  @media (max-width: 640px) {
+    .how { grid-template-columns: 1fr; }
+    .planrow { grid-template-columns: 1fr; }
+    .statgrid { grid-template-columns: repeat(2, 1fr); }
+    .row2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="#/">📣 <b>ShoutKart</b></a>
+    <div class="navlinks">
+      <a href="#/">Browse pages</a>
+      <a class="cta" href="#/list">List your page</a>
+    </div>
+  </nav>
+  <div id="app"><p class="center muted" style="padding:60px 0">Loading…</p></div>
+  <footer>ShoutKart — the shoutout marketplace for India's meme pages.<br><a href="#/list">Own a meme page? List it free.</a></footer>
+</div>
+
+<script>
+var SUPABASE_URL = 'https://vxszwegrpzrzbbwqyovw.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_xnWsueFiFLyvaJF9pFk3_A_5o5TzN8L';
+var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+var app = document.getElementById('app');
+var PLATFORM_FEE_PCT = 10;
+
+var NICHES = ['Bollywood', 'Cricket', 'College Life', 'Tech & Startups', 'Desi Humour',
+  'Movies & TV', 'City Life', 'Exams & Students', 'Food', 'Fashion & Lifestyle', 'Other'];
+var AVATAR_COLORS = ['#C6FF4A', '#FF8FB1', '#8FB1FF', '#FFC94A', '#9DF0A8', '#D69DFF'];
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function rs(n) { return '₹' + Number(n).toLocaleString('en-IN'); }
+function compact(n) {
+  n = Number(n);
+  if (n >= 10000000) return (n / 10000000).toFixed(1).replace(/\.0$/, '') + ' Cr';
+  if (n >= 100000) return (n / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
+function avatarColor(handle) {
+  var h = 0;
+  for (var i = 0; i < handle.length; i++) h = (h * 31 + handle.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+function engagement(p) {
+  if (!p.followers || !p.avg_likes) return '—';
+  return (p.avg_likes / p.followers * 100).toFixed(1) + '%';
+}
+function showErr(id, msg) { var e = document.getElementById(id); if (e) { e.textContent = msg; e.style.display = 'block'; } }
+function hideErr(id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; }
+
+/* ---------- router ---------- */
+window.addEventListener('hashchange', route);
+function route() {
+  var h = location.hash || '#/';
+  var m;
+  if ((m = h.match(/^#\/book\/([a-z0-9._]+)\/(story|feed)$/))) return renderBook(m[1], m[2]);
+  if ((m = h.match(/^#\/page\/([a-z0-9._]+)$/))) return renderDetail(m[1]);
+  if (h === '#/list') return renderListForm();
+  return renderHome();
+}
+
+/* ---------- home: browse pages ---------- */
+var allPages = [];
+var filters = { q: '', niche: '', sort: 'followers' };
+
+function renderHome() {
+  app.innerHTML =
+    '<div class="hero"><h1>Your brand, on India\'s <span class="hl">funniest pages.</span></h1>' +
+    '<p>ShoutKart connects you with meme pages your customers already follow. Book a story or feed-post shoutout in minutes — no DMs, no haggling, no middlemen.</p>' +
+    '<div class="btnrow"><a class="btn" href="#/" id="browseBtn">Browse pages</a>' +
+    '<a class="btn ghost" href="#/list">List your meme page</a></div></div>' +
+    '<div class="how">' +
+    '<div class="step"><b>🔍</b><h3>1. Find your page</h3><p>Filter by niche, followers and budget. Real engagement numbers, upfront pricing.</p></div>' +
+    '<div class="step"><b>📝</b><h3>2. Book in 2 minutes</h3><p>Pick story or feed post, tell the page what to shout about. Pay the page directly over UPI.</p></div>' +
+    '<div class="step"><b>📣</b><h3>3. Get shouted out</h3><p>The page posts your shoutout on the agreed date. You get the reach; they get paid.</p></div>' +
+    '</div>' +
+    '<div class="toolbar">' +
+    '<input id="fq" placeholder="Search pages…" value="' + esc(filters.q) + '">' +
+    '<select id="fniche"><option value="">All niches</option>' +
+    NICHES.map(function (n) { return '<option value="' + esc(n) + '"' + (filters.niche === n ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') +
+    '</select>' +
+    '<select id="fsort">' +
+    '<option value="followers"' + (filters.sort === 'followers' ? ' selected' : '') + '>Most followers</option>' +
+    '<option value="story"' + (filters.sort === 'story' ? ' selected' : '') + '>Lowest story price</option>' +
+    '<option value="feed"' + (filters.sort === 'feed' ? ' selected' : '') + '>Lowest feed price</option>' +
+    '</select></div>' +
+    '<div class="count" id="pcount"></div>' +
+    '<div class="grid" id="pgrid"><p class="muted">Loading pages…</p></div>';
+
+  document.getElementById('browseBtn').addEventListener('click', function (e) {
+    e.preventDefault();
+    document.querySelector('.toolbar').scrollIntoView({ behavior: 'smooth' });
+  });
+  document.getElementById('fq').addEventListener('input', function (e) { filters.q = e.target.value; drawGrid(); });
+  document.getElementById('fniche').addEventListener('change', function (e) { filters.niche = e.target.value; drawGrid(); });
+  document.getElementById('fsort').addEventListener('change', function (e) { filters.sort = e.target.value; drawGrid(); });
+
+  loadPages();
+}
+
+function loadPages() {
+  sb.from('shout_pages').select('*').order('followers', { ascending: false })
+    .then(function (res) {
+      if (res.error) {
+        document.getElementById('pgrid').innerHTML = '<p class="muted">Could not load pages. Check your connection and refresh.</p>';
+        return;
+      }
+      allPages = res.data || [];
+      drawGrid();
+    });
+}
+
+function pageCard(p) {
+  var c = avatarColor(p.handle);
+  var initial = esc((p.display_name || p.handle).charAt(0).toUpperCase());
+  return '<div class="card">' +
+    '<div class="top"><div class="avatar" style="background:' + c + '">' + initial + '</div>' +
+    '<div class="who"><h3>' + esc(p.display_name) + '</h3>' +
+    '<div class="handle">@' + esc(p.handle) + '</div>' +
+    '<span class="niche">' + esc(p.niche) + '</span>' +
+    (p.is_sample ? '<span class="samplebadge">SAMPLE</span>' : '') +
+    '</div></div>' +
+    '<div class="stats"><div><b>' + compact(p.followers) + '</b>followers</div>' +
+    '<div><b>' + compact(p.avg_likes || 0) + '</b>avg likes</div>' +
+    '<div><b>' + engagement(p) + '</b>engagement</div></div>' +
+    '<div class="prices"><div class="price"><div class="t">Story (24h)</div><div class="p">' + rs(p.story_price) + '</div></div>' +
+    '<div class="price"><div class="t">Feed post</div><div class="p">' + rs(p.feed_price) + '</div></div></div>' +
+    '<a class="btn block bookbtn" href="#/page/' + esc(p.handle) + '">View &amp; book</a>' +
+    '</div>';
+}
+
+function drawGrid() {
+  var grid = document.getElementById('pgrid');
+  if (!grid) return;
+  var q = filters.q.trim().toLowerCase();
+  var list = allPages.filter(function (p) {
+    if (filters.niche && p.niche !== filters.niche) return false;
+    if (q && (p.handle.toLowerCase().indexOf(q) < 0 && (p.display_name || '').toLowerCase().indexOf(q) < 0)) return false;
+    return true;
+  });
+  list.sort(function (a, b) {
+    if (filters.sort === 'story') return a.story_price - b.story_price;
+    if (filters.sort === 'feed') return a.feed_price - b.feed_price;
+    return b.followers - a.followers;
+  });
+  document.getElementById('pcount').textContent = list.length + (list.length === 1 ? ' page' : ' pages') + ' available';
+  grid.innerHTML = list.length ? list.map(pageCard).join('') : '<p class="muted">No pages match. Try clearing the filters — or list your own page.</p>';
+}
+
+/* ---------- page detail ---------- */
+function renderDetail(handle) {
+  app.innerHTML = '<p class="center muted" style="padding:60px 0">Loading…</p>';
+  sb.from('shout_pages').select('*').eq('handle', handle).maybeSingle()
+    .then(function (res) {
+      if (res.error || !res.data) {
+        app.innerHTML = '<p class="center muted" style="padding:60px 0">Page not found. <a href="#/">Back to browse</a></p>';
+        return;
+      }
+      var p = res.data;
+      var c = avatarColor(p.handle);
+      var initial = esc((p.display_name || p.handle).charAt(0).toUpperCase());
+      app.innerHTML =
+        '<a class="backlink" href="#/">← All pages</a>' +
+        '<div class="detailhead"><div class="avatar" style="background:' + c + '">' + initial + '</div>' +
+        '<div><h1>' + esc(p.display_name) + '</h1>' +
+        '<div class="handle">@' + esc(p.handle) + ' · <span class="niche">' + esc(p.niche) + '</span>' +
+        (p.is_sample ? '<span class="samplebadge">SAMPLE LISTING</span>' : '') + '</div></div></div>' +
+        (p.bio ? '<p class="bio">' + esc(p.bio) + '</p>' : '') +
+        '<div class="statgrid">' +
+        '<div class="stat"><b>' + compact(p.followers) + '</b><span>followers</span></div>' +
+        '<div class="stat"><b>' + compact(p.avg_likes || 0) + '</b><span>avg likes / post</span></div>' +
+        '<div class="stat"><b>' + engagement(p) + '</b><span>engagement</span></div>' +
+        '<div class="stat"><b>' + esc(p.niche) + '</b><span>niche</span></div>' +
+        '</div>' +
+        '<div class="planrow">' +
+        '<div class="plan"><h3>📱 Story shoutout</h3><div class="p">' + rs(p.story_price) + '</div>' +
+        '<p>Your brand on their story for 24 hours. Best for traffic and quick promos.</p>' +
+        '<a class="btn block" href="#/book/' + esc(p.handle) + '/story">Book story</a></div>' +
+        '<div class="plan hot"><h3>🖼️ Feed post</h3><div class="p">' + rs(p.feed_price) + '</div>' +
+        '<p>A permanent post on their feed. Best for reach that keeps working.</p>' +
+        '<a class="btn block" href="#/book/' + esc(p.handle) + '/feed">Book feed post</a></div>' +
+        '</div>' +
+        '<div class="notice">You pay the page owner directly over UPI after they confirm your booking. ' +
+        'ShoutKart\'s ' + PLATFORM_FEE_PCT + '% fee is waived during the pilot — the page keeps 100%.</div>';
+    });
+}
+
+/* ---------- booking ---------- */
+function renderBook(handle, type) {
+  app.innerHTML = '<p class="center muted" style="padding:60px 0">Loading…</p>';
+  sb.from('shout_pages').select('*').eq('handle', handle).maybeSingle()
+    .then(function (res) {
+      if (res.error || !res.data) {
+        app.innerHTML = '<p class="center muted" style="padding:60px 0">Page not found. <a href="#/">Back to browse</a></p>';
+        return;
+      }
+      var p = res.data;
+      var price = type === 'story' ? p.story_price : p.feed_price;
+      var fee = Math.round(price * PLATFORM_FEE_PCT / 100);
+      var typeLabel = type === 'story' ? '📱 Story shoutout (24h)' : '🖼️ Feed post';
+      var minDate = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+      app.innerHTML =
+        '<a class="backlink" href="#/page/' + esc(p.handle) + '">← Back to @' + esc(p.handle) + '</a>' +
+        '<div class="formcard"><h2>Book a shoutout</h2>' +
+        '<p class="sub">' + typeLabel + ' on <b>@' + esc(p.handle) + '</b> · ' + compact(p.followers) + ' followers</p>' +
+        '<div class="summary">' +
+        '<div class="line"><span>Shoutout price</span><span>' + rs(price) + '</span></div>' +
+        '<div class="line"><span>ShoutKart fee (' + PLATFORM_FEE_PCT + '%)</span><span class="freenote">' + rs(fee) + ' — waived in pilot</span></div>' +
+        '<div class="line total"><span>You pay the page</span><span>' + rs(price) + '</span></div>' +
+        '</div>' +
+        '<label for="bname">Your name</label><input id="bname" placeholder="Aarav Sharma" autocomplete="name">' +
+        '<div class="row2"><div><label for="bcontact">WhatsApp number</label><input id="bcontact" placeholder="98765 43210" inputmode="tel"></div>' +
+        '<div><label for="bdate">Preferred date</label><input id="bdate" type="date" min="' + minDate + '"></div></div>' +
+        '<label for="blink">Brand / product link</label><input id="blink" placeholder="https://yourbrand.com" inputmode="url">' +
+        '<label for="bbrief">What should the shoutout say?</label>' +
+        '<textarea id="bbrief" placeholder="e.g. Launching our new sneakers for college students — 20% off with code FEST20. Keep it funny, on-brand for your page."></textarea>' +
+        '<div class="err" id="berr"></div>' +
+        '<button class="btn block" id="bgo" style="margin-top:16px">Send booking request</button>' +
+        '<p class="sub" style="margin-top:10px">No payment now. The page owner confirms on WhatsApp and shares UPI details.</p>' +
+        '</div>';
+
+      document.getElementById('bgo').addEventListener('click', function () {
+        hideErr('berr');
+        var name = document.getElementById('bname').value.trim();
+        var contact = document.getElementById('bcontact').value.replace(/[\s-]/g, '');
+        var date = document.getElementById('bdate').value;
+        var link = document.getElementById('blink').value.trim();
+        var brief = document.getElementById('bbrief').value.trim();
+        if (name.length < 2) return showErr('berr', 'Please enter your name.');
+        if (!/^[+]?[0-9]{10,13}$/.test(contact)) return showErr('berr', 'Please enter a valid WhatsApp number.');
+        if (!date) return showErr('berr', 'Please pick a preferred date.');
+        if (brief.length < 10) return showErr('berr', 'Tell the page what the shoutout should say (a line or two).');
+        var btn = document.getElementById('bgo');
+        btn.disabled = true; btn.textContent = 'Sending…';
+        sb.from('shout_orders').insert({
+          page_id: p.id, buyer_name: name, buyer_contact: contact,
+          brand_link: link || null, shout_type: type, preferred_date: date,
+          brief: brief, amount: price, status: 'pending'
+        }).select('id').single().then(function (ins) {
+          if (ins.error) {
+            btn.disabled = false; btn.textContent = 'Send booking request';
+            return showErr('berr', 'Something went wrong. Please try again.');
+          }
+          var ref = 'SK-' + String(ins.data.id).replace(/-/g, '').slice(0, 6).toUpperCase();
+          app.innerHTML =
+            '<div class="success"><div class="big">🎉</div><h2>Booking request sent!</h2>' +
+            '<p><b>@' + esc(p.handle) + '</b> will message you on WhatsApp within 24 hours to confirm ' +
+            'and share UPI payment details. Keep this reference:</p>' +
+            '<div class="refcode">' + esc(ref) + '</div>' +
+            '<p class="muted">' + typeLabel + ' · ' + rs(price) + ' · ' + esc(date) + '</p>' +
+            '<div class="btnrow" style="margin-top:18px"><a class="btn" href="#/">Browse more pages</a></div></div>';
+        });
+      });
+    });
+}
+
+/* ---------- list your page ---------- */
+function renderListForm() {
+  app.innerHTML =
+    '<a class="backlink" href="#/">← All pages</a>' +
+    '<div class="formcard"><h2>📣 List your meme page</h2>' +
+    '<p class="sub">Free during the pilot. Brands browse, book, and pay you directly over UPI — you keep 100% while the pilot lasts.</p>' +
+    '<div class="row2"><div><label for="lhandle">Page handle (no @)</label><input id="lhandle" placeholder="campus.ke.memers"></div>' +
+    '<div><label for="lname">Display name</label><input id="lname" placeholder="Campus Ke Memers"></div></div>' +
+    '<label for="lniche">Niche</label><select id="lniche">' +
+    NICHES.map(function (n) { return '<option>' + esc(n) + '</option>'; }).join('') + '</select>' +
+    '<div class="row2"><div><label for="lfol">Followers</label><input id="lfol" type="number" min="1000" placeholder="150000"></div>' +
+    '<div><label for="llikes">Avg likes per post</label><input id="llikes" type="number" min="0" placeholder="8000"></div></div>' +
+    '<div class="row2"><div><label for="lstory">Story shoutout price (₹)</label><input id="lstory" type="number" min="99" placeholder="1499"></div>' +
+    '<div><label for="lfeed">Feed post price (₹)</label><input id="lfeed" type="number" min="99" placeholder="4499"></div></div>' +
+    '<div class="row2"><div><label for="lwa">WhatsApp (for booking alerts)</label><input id="lwa" placeholder="98765 43210" inputmode="tel"></div>' +
+    '<div><label for="lupi">UPI ID (for payouts)</label><input id="lupi" placeholder="name@okhdfc"></div></div>' +
+    '<label for="lbio">About your page</label>' +
+    '<textarea id="lbio" placeholder="What kind of memes, who follows you, past brand work…"></textarea>' +
+    '<div class="err" id="lerr"></div><div class="ok" id="lok"></div>' +
+    '<button class="btn block" id="lgo" style="margin-top:16px">List my page — it\'s free</button></div>';
+
+  document.getElementById('lgo').addEventListener('click', function () {
+    hideErr('lerr');
+    var handle = document.getElementById('lhandle').value.trim().toLowerCase().replace(/^@/, '');
+    var name = document.getElementById('lname').value.trim();
+    var niche = document.getElementById('lniche').value;
+    var fol = parseInt(document.getElementById('lfol').value, 10);
+    var likes = parseInt(document.getElementById('llikes').value, 10) || 0;
+    var story = parseInt(document.getElementById('lstory').value, 10);
+    var feed = parseInt(document.getElementById('lfeed').value, 10);
+    var wa = document.getElementById('lwa').value.replace(/[\s-]/g, '');
+    var upi = document.getElementById('lupi').value.trim();
+    var bio = document.getElementById('lbio').value.trim();
+    if (!/^[a-z0-9._]{2,30}$/.test(handle)) return showErr('lerr', 'Handle must be 2–30 chars: letters, numbers, dots, underscores.');
+    if (name.length < 2) return showErr('lerr', 'Please enter a display name.');
+    if (!fol || fol < 1000) return showErr('lerr', 'Followers must be at least 1,000.');
+    if (!story || story < 99 || !feed || feed < 99) return showErr('lerr', 'Set both prices (min ₹99).');
+    if (!/^[+]?[0-9]{10,13}$/.test(wa)) return showErr('lerr', 'Please enter a valid WhatsApp number.');
+    if (!/^[\w.\-]{2,}@[a-zA-Z]{2,}/.test(upi)) return showErr('lerr', 'Please enter a valid UPI ID (e.g. name@okhdfc).');
+    var btn = document.getElementById('lgo');
+    btn.disabled = true; btn.textContent = 'Listing…';
+    sb.from('shout_pages').insert({
+      handle: handle, display_name: name, niche: niche, followers: fol, avg_likes: likes,
+      story_price: story, feed_price: feed, whatsapp: wa, upi_id: upi,
+      bio: bio || null, is_sample: false
+    }).then(function (ins) {
+      if (ins.error) {
+        btn.disabled = false; btn.textContent = "List my page — it's free";
+        var msg = 'Something went wrong. Please try again.';
+        if (ins.error.code === '23505') msg = 'That handle is already listed. Is this your page? Try a variation.';
+        return showErr('lerr', msg);
+      }
+      app.innerHTML =
+        '<div class="success"><div class="big">🚀</div><h2>You\'re listed!</h2>' +
+        '<p><b>@' + esc(handle) + '</b> is now live on ShoutKart. Brands can find you and send booking requests straight to your WhatsApp.</p>' +
+        '<div class="btnrow" style="margin-top:18px"><a class="btn" href="#/page/' + esc(handle) + '">View your listing</a> ' +
+        '<a class="btn ghost" href="#/">Browse pages</a></div></div>';
+    });
+  });
+}
+
+route();
+</script>
+</body>
+</html>
